@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>造价人日报</title>
+<style>
+:root {
+  --paper: #f5f0e0;
+  --ink: #2b2b2b;
+  --red: #8b2e2e;
+  --rule: #c8b99a;
+  --accent: #4a6b3d;
+  --light: #e8dfc8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: "Noto Serif SC", "SimSun", "Songti SC", serif;
+  background: #1a1a1a;
+  color: var(--ink);
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+  min-height: 100vh;
+}
+#paper {
+  width: 100%;
+  max-width: 960px;
+  background: var(--paper);
+  padding: 20px 24px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  position: relative;
+}
+#masthead {
+  text-align: center;
+  border-bottom: 3px double var(--ink);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+#masthead h1 {
+  font-size: clamp(24px, 6vw, 42px);
+  letter-spacing: 8px;
+  font-weight: 900;
+}
+#masthead .meta {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #555;
+}
+#masthead .meta span { margin: 0 6px; }
+#nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+#nav button {
+  background: transparent;
+  border: 1px solid var(--ink);
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  border-radius: 2px;
+  transition: all .2s;
+}
+#nav button:hover, #nav button.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+.page { display: none; animation: fade .3s; }
+.page.active { display: block; }
+@keyframes fade { from{opacity:0} to{opacity:1} }
+.columns {
+  column-count: 2;
+  column-gap: 24px;
+  column-rule: 1px solid var(--rule);
+}
+.columns.single { column-count: 1; }
+@media (max-width: 700px) {
+  .columns { column-count: 1; }
+}
+.article {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.3);
+  padding: 12px;
+  border-radius: 4px;
+}
+.article h2 {
+  font-size: 18px;
+  border-left: 4px solid var(--red);
+  padding-left: 8px;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.article h3 {
+  font-size: 15px;
+  color: var(--accent);
+  margin: 8px 0 4px;
+}
+.article p, .article li {
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 5px;
+}
+.article ul, .article ol { padding-left: 18px; }
+.tag {
+  display: inline-block;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.img-box {
+  background: linear-gradient(135deg, #ddd, #bbb);
+  border: 1px dashed #999;
+  text-align: center;
+  padding: 20px 10px;
+  color: #555;
+  font-size: 12px;
+  margin: 8px 0;
+  border-radius: 4px;
+}
+.img-box img { max-width: 100%; border-radius: 4px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin: 8px 0;
+}
+th, td { border: 1px solid var(--rule); padding: 5px 6px; text-align: left; }
+th { background: var(--light); }
+.mnemonic {
+  background: var(--light);
+  border-left: 4px solid var(--accent);
+  padding: 10px 12px;
+  margin: 8px 0;
+  font-size: 13px;
+  line-height: 1.9;
+  border-radius: 0 4px 4px 0;
+}
+#footer {
+  border-top: 1px solid var(--rule);
+  margin-top: 20px;
+  padding-top: 10px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+}
+#checkin-bar {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 16px;
+  border-radius: 24px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .3s;
+  user-select: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  z-index: 100;
+}
+#checkin-bar.checked { background: var(--accent); }
+#checkin-bar:hover { transform: scale(1.05); }
+.flip {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  z-index: 50;
+}
+.flip:hover { background: rgba(0,0,0,0.8); }
+#flip-prev { left: 4px; }
+#flip-next { right: 4px;
+}
+@media (max-width: 768px) {
+  .flip { display: none; }
+}
+.quiz {
+  background: #f0e9d4;
+  padding: 10px;
+  border: 1px solid var(--rule);
+  margin: 8px 0;
+  border-radius: 4px;
+}
+.quiz button {
+  margin-top: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  border: 1px solid var(--ink);
+  background: #fff;
+  border-radius: 3px;
+}
+.quiz .answer { display: none; margin-top: 6px; color: var(--accent); font-weight: bold; font-size: 13px; }
+.micro-box {
+  background: #e0d8c0;
+  padding: 12px;
+  border: 2px dashed var(--accent);
+  margin: 8px 0;
+  border-radius: 4px;
+}
+.micro-box textarea {
+  width: 100%;
+  min-height: 70px;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px;
+  border: 1px solid var(--rule);
+  background: #faf6eb;
+  resize: vertical;
+  border-radius: 4px;
+}
+.highlight-box {
+  background: #fff3cd;
+  border: 1px solid #d4a72c;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.tip { color: var(--red); font-weight: bold; }
+</style>
+</head>
+<body>
+
+<button class="flip" id="flip-prev" onclick="flip(-1)">‹</button>
+<button class="flip" id="flip-next" onclick="flip(1)">›</button>
+
+<div id="paper">
+  <div id="masthead">
+    <h1>造 价 人 日 报</h1>
+    <div class="meta">
+      <span id="date-display"></span>
+      <span>·</span>
+      <span>每日一小时 · 提升与可变现</span>
+      <span>·</span>
+      <span id="weekday-display"></span>
+    </div>
+  </div>
+
+  <div id="nav">
+    <button class="nav-btn active" data-page="0">📰 要闻</button>
+    <button class="nav-btn" data-page="1">📜 政策</button>
+    <button class="nav-btn" data-page="2">📖 考点</button>
+    <button class="nav-btn" data-page="3">📊 数据</button>
+    <button class="nav-btn" data-page="4">✍️ 微学习</button>
+  </div>
+
+  <!-- 页面0：要闻 -->
+  <div class="page active" id="page-0">
+    <div class="columns">
+      <div class="article">
+        <h2><span class="tag">头条</span>住建部定调"十五五"：整治内卷</h2>
+        <div class="img-box">📷 配图位：城市更新施工现场<br>建议尺寸 800×400px</div>
+        <p>9月18日国新办发布会明确，"十五五"时期建筑业将综合整治"内卷式"竞争与工程款拖欠，引导企业从"重规模、拼价格"转向"重品质、拼实力"。</p>
+        <p><strong>四大抓手：</strong></p>
+        <ul>
+          <li>产业升级（智能/绿色/融合）</li>
+          <li>激发市场活力</li>
+          <li>提升建筑品质</li>
+          <li>支持企业出海</li>
+        </ul>
+        <div class="highlight-box">
+          💡 <strong>造价人解读：</strong>低价中标时代加速退场，成本管控从"事后核减"前移到"方案比选"。一造证书含金量上升。
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">新政</span>10月密集落地：城市更新主战场</h2>
+        <p>• 10/23 老旧街区厂区改造提升推进<br>
+        • 10/20 历史文化保护"十五五"规划<br>
+        • 10/16 城镇供热"温暖工程"三年行动（2026-2028）<br>
+        • 10/14 住建部调研"十五五"规划编制</p>
+        <div class="highlight-box">
+          💡 <strong>卡位建议：</strong>副业选题优先"老旧小区改造造价""管网工程签证""加装电梯估算"等细分场景。
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">监管</span>技术标权重提升，造价服务重估</h2>
+        <p>住建部建市规〔2026〕2号文优化评标方法，<strong>提高技术标权重</strong>，突出项目负责人及团队能力评审。"宽进、严管、重处"机制下，咨询成果可复核性成为生存底线。</p>
+        <div class="highlight-box">
+          💡 <strong>产品逻辑：</strong>客户买的不是模板，是合规护身符。你的"可复核模板工具包"有政策背书。
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">AI</span>广联达全场景AI造价产品</h2>
+        <div class="img-box">🎥 视频位：AI提量演示<br>可嵌入 &lt;video&gt; 或 iframe</div>
+        <p>• 土建AI提量准确率 <strong>98%+</strong>，一次提量清单与模型自动联动<br>
+        • AI组价：1500条清单10分钟，采纳率最高90%<br>
+        • AI质控：30秒出指标，穿透式核查<br>
+        • 无图算量：拍照→识别门窗/外墙工程量</p>
+        <div class="highlight-box">
+          💡 <strong>判断：</strong>AI吃掉"重复算量"，吃不掉变更判断、审计对抗、客户沟通。你的产品应该卖"AI做不了的判断题"。
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">地方</span>重庆建三级价格信息发布体系</h2>
+        <p>重庆市造价总站构建"市场综合价+推荐价+厂商价"三级信息体系，钢筋试行"日报价"机制，探索"造价数据库+AI"动态基价模型。</p>
+        <p>湖北同步推出"智能造价助手"，基于统一数据库+大模型，实时查询含税价、自动推荐方案造价。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页面1：政策 -->
+  <div class="page" id="page-1">
+    <div class="columns">
+      <div class="article">
+        <h2><span class="tag">核心</span>新清单计价标准落地</h2>
+        <div class="img-box">📷 配图位：GB/T 50500-2024 封面</div>
+        <p><strong>《建设工程工程量清单计价标准》GB/T 50500-2024</strong> 已于2025年9月1日实施，原2013版废止。</p>
+        <p><strong>核心变化：</strong></p>
+        <ul>
+          <li>不再将政府定额、信息价作为主要计价依据</li>
+          <li>推行"清单计量、市场询价、自主报价、竞争定价"</li>
+          <li>新增BIM应用要求</li>
+          <li>强化过程结算，新增工程替代"签证"概念</li>
+          <li>明确发包人违约责任条款</li>
+        </ul>
+        <div class="mnemonic">
+          📌 <strong>记忆点：</strong>旧清单=定额兜底；新清单=市场定价。考试重点：单价合同/总价合同的计价风险分担变化。
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">原文</span>建市规〔2026〕2号文摘录</h2>
+        <p style="background:#f0e9d4;padding:10px;border-left:3px solid var(--red);font-size:12px;line-height:1.8;">
+          "建设单位应当与施工单位明确工程<strong>预付款、进度款和结算款</strong>的支付方式、时间节点和违约责任，防范工程款拖欠风险。"<br><br>
+          "优化勘察、设计、监理、造价等工程服务评标方法，<strong>提高技术标权重</strong>，突出项目负责人及团队能力评审。"
+        </p>
+        <p>📌 全文搜索：住建部官网 → 政务公开 → 建市规〔2026〕2号</p>
+      </div>
+      <div class="article">
+        <h2><span class="tag">地方</span>重庆/湖北/广东动态</h2>
+        <p><strong>重庆：</strong>《建设工程安全文明施工费计取标准》修订，试行钢筋"日报价"，建立"造价数据库+AI"动态基价模型。</p>
+        <p><strong>湖北：</strong>"智能造价助手"上线，统一造价数据库+大模型，实时查询武汉螺纹钢含税价。</p>
+        <p><strong>广东：</strong>水泥价格珠三角散装上调50元/吨，粤西30-50元/吨，10月下旬推涨。</p>
+      </div>
+      <div class="article">
+        <h2><span class="tag">考试</span>一造考务提醒</h2>
+        <p>2026年度考试已于10月17-18日结束。</p>
+        <p class="tip">⚠️ 下一年度报名、大纲、考试安排请务必以中国人事考试网（www.cpta.com.cn）和所在省人事考试网当年通知为准。</p>
+        <p>2026年度沿用2025年版教材，已依据新清单标准完成修订，其中《计价》变化最大。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页面2：考点 -->
+  <div class="page" id="page-2">
+    <div class="columns">
+      <div class="article">
+        <h2><span class="tag">考点</span>建安费按费用构成要素划分</h2>
+        <div class="img-box">📷 配图位：费用构成思维导图</div>
+        <p><strong>人 + 材 + 机 + 企管费 + 利润 + 规费 + 增值税</strong></p>
+
+        <h3>1. 人工费（直接生产工人）</h3>
+        <p>计时/计件工资、奖金、津贴补贴、加班工资、特殊情况下支付工资</p>
+
+        <h3>2. 材料费</h3>
+        <p>原价 + 运杂费 + 运输损耗 + 采购及保管费<br>❌ 不含增值税进项（一般计税需扣除）</p>
+
+        <h3>3. 施工机具使用费</h3>
+        <p>机械（折旧/检修/维护/安拆/人工/燃料）+ 仪器仪表</p>
+
+        <h3>4. 企业管理费（13类高频）</h3>
+        <p>管理人员工资、办公、差旅、固定资产使用、工具用具、<strong>检验试验费</strong>、财务费、税金等</p>
+
+        <h3>5. 利润</h3>
+        <p>企业自主确定，基数常取人工费或人机合计</p>
+
+        <h3>6. 规费（不可竞争）</h3>
+        <p>五险一金：养老、失业、医疗、工伤、生育 + 住房公积金</p>
+
+        <h3>7. 增值税</h3>
+        <p>一般计税 <strong>9%</strong> | 简易计税 <strong>3%</strong></p>
+      </div>
+      <div class="article">
+        <h2><span class="tag">口诀</span>记忆卡片</h2>
+        <div class="mnemonic">
+          🧠 <strong>建安费七兄弟：</strong><br>
+          人材机管利规税<br>
+          企管检验不进材<br>
+          规费只装五险一金<br>
+          一般9%简易3%
+        </div>
+
+        <h2><span class="tag">易错</span>高频坑点</h2>
+        <table>
+          <tr><th>考点</th><th>归属</th><th>坑</th></tr>
+          <tr><td>检验试验费</td><td>企业管理费</td><td>≠材料费</td></tr>
+          <tr><td>工伤保险</td><td>规费</td><td>≠意外险（企管费）</td></tr>
+          <tr><td>二次搬运</td><td>措施费</td><td>≠材料费</td></tr>
+          <tr><td>非夜间照明</td><td>措施费</td><td>≠企业管理费</td></tr>
+          <tr><td>破坏性试验</td><td>建设方研究试验费</td><td>≠企管费</td></tr>
+        </table>
+
+        <h2><span class="tag">自测</span>今日一练</h2>
+        <div class="quiz">
+          <p>对构件做一般鉴定检查的费用，落在哪？</p>
+          <p>A. 材料费　B. 措施费　C. 企业管理费　D. 研究试验费</p>
+          <button onclick="this.nextElementSibling.style.display='block'">显示答案</button>
+          <div class="answer">✅ 答案：C（企业管理费-检验试验费）</div>
+        </div>
+        <div class="quiz">
+          <p>工伤保险费属于？</p>
+          <p>A. 企业管理费　B. 规费　C. 人工费　D. 措施费</p>
+          <button onclick="this.nextElementSibling.style.display='block'">显示答案</button>
+          <div class="answer">✅ 答案：B（规费-社会保险费）</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页面3：数据 -->
+  <div class="page" id="page-3">
+    <div class="columns single">
+      <div class="article">
+        <h2><span class="tag">市场</span>价格信号看板</h2>
+        <div class="img-box">📷 配图位：价格走势折线图</div>
+        <table>
+          <tr><th>品类</th><th>最新信号</th><th>趋势</th><th>造价动作</th></tr>
+          <tr><td>水泥</td><td>珠三角散装+50元/吨</td><td>↑ 上涨</td><td>报价留调差条款</td></tr>
+          <tr><td>螺纹钢</td><td>3050-3100区间磨底</td><td>→ 偏弱</td><td>旧改项目动态调差</td></tr>
+          <tr><td>人工费(广州)</td><td>10月指数108.3</td><td>↑ 温和上行</td><td>措施费别压死</td></tr>
+          <tr><td>全过程咨询费率</td><td>0.34%-0.5%</td><td>→ 合理锚点</td><td>对标报价</td></tr>
+          <tr><td>纯算量小单</td><td>5000-8000元/单</td><td>↓ 贴成本线</td><td>转型高附加值</td></tr>
+        </table>
+      </div>
+      <div class="article">
+        <h2><span class="tag">行业</span>竞争格局数据</h2>
+        <table>
+          <tr><th>指标</th><th>数据</th><th>含义</th></tr>
+          <tr><td>头部机构全过程占比</td><td>&gt;70%</td><td>单一结算审计&lt;20%</td></tr>
+          <tr><td>北京违规机构</td><td>11家丢标</td><td>成果合规成生死线</td></tr>
+          <tr><td>复合型人才缺口</td><td>&gt;40%</td><td>懂造价+数据+沟通的人稀缺</td></tr>
+          <tr><td>知识付费案例</td><td>月入1-2万</td><td>99元资料包+年费群+外包</td></tr>
+        </table>
+      </div>
+      <div class="article">
+        <h2><span class="tag">机会</span>可变现方向雷达</h2>
+        <div class="highlight-box">
+          🎯 <strong>方向一：签证变更模板包</strong><br>
+          痛点：施工方不会写、审计砍量<br>
+          定价：199-499元/套<br>
+          交付：Excel模板+SOP+话术
+        </div>
+        <div class="highlight-box">
+          🎯 <strong>方向二：旧改无图估算工具</strong><br>
+          痛点：没图纸要报价<br>
+          定价：按项目收费 2000-5000<br>
+          交付：参数化估算表+指标库
+        </div>
+        <div class="highlight-box">
+          🎯 <strong>方向三：一造备考陪跑</strong><br>
+          痛点：在职备考没方向<br>
+          定价：999元/季（带打卡+答疑）<br>
+          交付：每日考点卡+周复盘模板
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 页面4：微学习 -->
+  <div class="page" id="page-4">
+    <div class="columns">
+      <div class="article">
+        <h2><span class="tag">今日</span>写作微练</h2>
+        <p><strong>任务：</strong>把专业术语改写成客户能懂的话</p>
+        <p><strong>原文：</strong></p>
+        <p style="background:#f0e9d4;padding:8px;font-size:12px;border-left:3px solid var(--red);">
+          变更估价应按已标价清单相同项目综合单价确定，类似项目参照换算，无依据项目重新组价。
+        </p>
+        <p><strong>改写示范：</strong></p>
+        <p style="background:#e8dfc8;padding:8px;font-size:12px;">
+          "你多干的那部分活，如果原来清单里有，就按原来单价算；差不多类似的，按原来思路换个数；要是完全没见过的新活，咱们重新核一遍人工材料机械，再定价格，不拍脑袋。"
+        </p>
+        <div class="micro-box">
+          <p><strong>你的改写区（直接写）：</strong></p>
+          <textarea placeholder="在这里写你的改写版本..."></textarea>
+        </div>
+      </div>
+      <div class="article">
+        <h2><span class="tag">营销</span>一句话说清服务价值</h2>
+        <p><strong>公式：</strong>我帮[谁]解决[什么问题]，通过[什么方法]，带来[什么结果]。</p>
+        <p><strong>你的服务套用：</strong></p>
+        <div class="micro-box">
+          <textarea placeholder="例：我帮中小施工方解决签证变更报价被砍的问题，通过标准化估算模板+话术SOP，让每次变更多拿回3-5万..."></textarea>
+        </div>
+
+        <h2><span class="tag">技能</span>写作结构练习</h2>
+        <p><strong>四段结构：问题→原因→做法→给模板</strong></p>
+        <p>下次写专业内容时套用：</p>
+        <ol>
+          <li><strong>问题：</strong>甲方总是砍你的签证量？</li>
+          <li><strong>原因：</strong>因为你只给了个总数，没拆单价依据</li>
+          <li><strong>做法：</strong>用"三单匹配法"（变更指令单+工程量确认单+单价分析表）</li>
+          <li><strong>给模板：</strong>扫码领取Excel自动计算版</li>
+        </ol>
+
+        <h2><span class="tag">复盘</span>本周待办</h2>
+        <div class="micro-box">
+          <textarea placeholder="今天完成了什么？明天优先做什么？"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    造价人日报 · 每日一期 · 政策源：住建部/人社部/中国人事考试网 · 内容仅供学习参考，以官方发布为准
+  </div>
+</div>
+
+<div id="checkin-bar" onclick="checkin()">📅 今日打卡</div>
+
+<script>
+// 日期显示
+const now = new Date();
+const dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日';
+const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+document.getElementById('date-display').textContent = dateStr;
+document.getElementById('weekday-display').textContent = weekdays[now.getDay()];
+
+// 导航切换
+const navBtns = document.querySelectorAll('.nav-btn');
+const pages = document.querySelectorAll('.page');
+navBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const idx = parseInt(btn.dataset.page);
+    navBtns.forEach(b => b.classList.remove('active'));
+    pages.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + idx).classList.add('active');
+  });
+});
+
+// 翻页
+let currentPage = 0;
+function flip(dir) {
+  currentPage += dir;
+  if (currentPage < 0) currentPage = 4;
+  if (currentPage > 4) currentPage = 0;
+  navBtns.forEach(b => b.classList.remove('active'));
+  pages.forEach(p => p.classList.remove('active'));
+  navBtns[currentPage].classList.add('active');
+  document.getElementById('page-' + currentPage).classList.add('active');
+}
+
+// 打卡
+function checkin() {
+  const bar = document.getElementById('checkin-bar');
+  const today = dateStr;
+  const lastCheckin = localStorage.getItem('checkin-date');
+  if (lastCheckin === today) {
+    bar.textContent = '✅ 今日已打卡';
+    bar.classList.add('checked');
+  } else {
+    localStorage.setItem('checkin-date', today);
+    bar.textContent = '✅ 打卡成功！';
+    bar.classList.add('checked');
+    setTimeout(() => { bar.textContent = '📅 今日打卡'; bar.classList.remove('checked'); }, 2000);
+  }
+}
+// 页面加载检查
+if (localStorage.getItem('checkin-date') === dateStr) {
+  const bar = document.getElementById('checkin-bar');
+  bar.textContent = '✅ 今日已打卡';
+  bar.classList.add('checked');
+}
+</script>
+</body>
+</html>
